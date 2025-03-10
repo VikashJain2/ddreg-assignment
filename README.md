@@ -33,10 +33,10 @@ backend/
 
 ### Environment Variables
 
-The backend uses the following environment variables, defined in the `.env` file:
+The backend uses the following environment variables, defined in the `.env.example` file:
 
 ```
-MONGODB_URI=mongodb://localhost:27017/task-manager-ddreg
+MONGODB_URI=mongodb://localhost:27017/'your-database'
 JWT_SECRET=random@secret
 CLIENT_URL=http://localhost:8080
 PORT=3000
