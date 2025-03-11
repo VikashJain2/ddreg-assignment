@@ -7,7 +7,7 @@ body {
 }
 
 h1 {
-    @apply text-3xl font-bold mb-4;
+    @apply text-3xl font-bold mb-4 dark:text-white;
 }
 
 h2 {
@@ -17,7 +17,31 @@ h2 {
 h3 {
     @apply text-xl font-medium mb-2;
 }
+@media (prefers-color-scheme: dark) {
+    body {
+        @apply bg-gray-900 text-gray-100;
+    }
+
+    h2 {
+        @apply dark:text-gray-300;
+    }
+
+    h3 {
+        @apply dark:text-gray-300;
+    }
+
+    a {
+        @apply dark:text-blue-400 dark:hover:text-blue-600;
+    }
+}
 
 a {
     @apply text-blue-600 hover:text-blue-800;
+}
+
+body{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }

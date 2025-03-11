@@ -1,5 +1,5 @@
 import Task from "../models/task.model.js";
-
+import taskService from "../services/task.service.js";
 const createTask = async (req, res) => {
   try {
     const { title, description, dueDate, priority } = req.body;
@@ -9,18 +9,34 @@ const createTask = async (req, res) => {
         .status(400)
         .json({ success: false, message: "All fields are required" });
     }
-    const newTask = new Task({
-      title: title,
-      description: description,
-      dueDate: dueDate,
-      priority: priority,
-      createdBy: req.user.userId,
+    // const newTask = new Task({
+    //   title: title,
+    //   description: description,
+    //   dueDate: dueDate,
+    //   priority: priority,
+    //   createdBy: req.user.userId,
+    // });
+
+    // await newTask.save();
+
+    const response = await taskService.createTask({
+      title,
+      description,
+      dueDate,
+      priority,
+      userId: req.user.userId,
     });
 
-    await newTask.save();
-    return res
-      .status(201)
-      .json({ success: true, message: "Task created successfully", newTask });
+    if (response.success === false) {
+      return res
+        .status(400)
+        .json({ success: response.success, message: response.message });
+    }
+    return res.status(201).json({
+      success: response.success,
+      message: response.message,
+      newTask: response.task,
+    });
   } catch (error) {
     return res
       .status(500)
@@ -140,9 +156,16 @@ const getTasks = async (req, res) => {
       sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
     }
 
-    const tasks = await Task.find(filter).sort();
+    const response = await taskService.getTasks({ filter, sortOptions });
+    if (!response.success) {
+      return res
+        .status(400)
+        .json({ success: response.success, message: response.message });
+    }
 
-    return res.status(200).json({ success: true, tasks });
+    return res
+      .status(200)
+      .json({ success: response.success, task: response.task });
   } catch (error) {
     return res
       .status(500)
@@ -186,13 +209,25 @@ const updateSpecificTask = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Task not found" });
     }
-    const { title, description, dueDate, priority, completed } = req.body;
-    const updatedTask = await Task.findByIdAndUpdate(taskId, {
+    const { title, description, dueDate, priority, status } = req.body;
+    const updateData = {
       ...(title && { title }),
       ...(description && { description }),
       ...(dueDate && { dueDate }),
       ...(priority && { priority }),
-      ...(completed && { completed }),
+      ...(status && { status }),
+    };
+
+    if (status === "Completed") {
+      updateData.completed = true;
+      updateData.completedAt = new Date();
+    } else {
+      updateData.completed = false;
+      updateData.completedAt = null;
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(taskId, updateData, {
+      new: true,
     });
     return res.status(200).json({
       success: true,
@@ -200,6 +235,7 @@ const updateSpecificTask = async (req, res) => {
       data: updatedTask,
     });
   } catch (error) {
+    console.log(error);
     return res
       .status(500)
       .json({ success: false, message: error.message || error });

@@ -63,12 +63,14 @@ const loginUser = async (req, res) => {
     }
 
     const response = await userServices.loginUser({ email, password });
-    if(response.success === false){
-      return res.status(400).json({success: false, message: response.message})
+    if (response.success === false) {
+      return res
+        .status(400)
+        .json({ success: false, message: response.message });
     }
-    
-    const token = generateToken(response.user);
 
+    const token = await generateToken(response.user);
+    // console.log("token--->", token)
     return res
       .cookie("token", token, {
         httpOnly: true,

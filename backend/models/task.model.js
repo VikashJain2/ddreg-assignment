@@ -32,10 +32,16 @@ const taskSchema = new mongoose.Schema(
       },
       default: "Medium",
     },
-    assignedTo: {
-      type: mongoose.Types.ObjectId,
-      ref: "User",
-      required: [true, "Assigned user is required"],
+    // assignedTo: {
+    //   type: mongoose.Types.ObjectId,
+    //   ref: "User",
+    //   required: [true, "Assigned user is required"],
+    // },
+
+    status: {
+      type: String,
+      enum: ["Pending", "In Progress", "Completed"],
+      default: "Pending",
     },
     createdBy: {
       type: mongoose.Types.ObjectId,
