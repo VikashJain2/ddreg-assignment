@@ -98,18 +98,14 @@ const loginUser = async (req, res) => {
 const fetchUserInfo = async (req, res) => {
   try {
     const { userId } = req.body;
-
-    const fetchUser = await user.findById(userId).select("-password");
-
-    if (!fetchUser) {
-      return res.json({ success: false, message: "User not found" });
+    const fetchUser = await userServices.fetchUser({ userId });
+    if (fetchUser.success === false) {
+      return res.status(400).json({ success: false, message: fetchUser.message });
     }
-
-    return res.json({ success: true, fetchUser });
+    return res.status(200).json({ success: true, user: fetchUser.user });
   } catch (error) {
     console.log(error);
-
-    return res.json({ success: false, message: "Something went wrong" });
+    return res.json({ success: false, message: error.message || "Something went wrong" });
   }
 };
 

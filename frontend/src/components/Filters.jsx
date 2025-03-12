@@ -18,7 +18,6 @@ const Filters = ({ searchQuery, setSearchQuery, statusFilter, setStatusFilter, p
         className="w-full p-2 mb-4 rounded-md bg-gray-700/50 border border-gray-600/50 text-white focus:outline-none focus:border-indigo-500"
       >
         <option value="All">All Statuses</option>
-        <option value="In Progress">In Progress</option>
         <option value="Completed">Completed</option>
         <option value="Pending">Pending</option>
       </select>

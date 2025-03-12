@@ -4,7 +4,24 @@ import { axiosInstance } from "../utils/axiosInstance";
 import { summaryApi } from "../utils/summaryAPI";
 import { useDispatch } from "react-redux";
 import { addTask } from "../store/taskSlice";
-const CreateTask = ({ closeModal,fetchAnalytics }) => {
+import { z } from "zod";
+
+// Define the schema for task validation
+const taskSchema = z.object({
+  title: z.string().min(1, "Title is required").max(100, "Title is too long"),
+  description: z
+    .string()
+    .min(10, "Description must be 10 characters long")
+    .max(500, "Description is too long")
+    .optional(),
+  dueDate: z.string().refine((value) => {
+    const date = new Date(value);
+    return !isNaN(date.getTime()); // Ensure the date is valid
+  }, "Invalid date format"),
+  priority: z.enum(["High", "Medium", "Low"]),
+});
+
+const CreateTask = ({ closeModal, fetchAnalytics }) => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const dispatch = useDispatch();
   const [newTask, setNewTask] = useState({
@@ -14,18 +31,36 @@ const CreateTask = ({ closeModal,fetchAnalytics }) => {
     priority: "",
   });
 
-  const handleInputChange = (e) => {
-    e.preventDefault();
+  const [errors, setErrors] = useState({});
 
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewTask((prev) => ({
       ...prev,
       [name]: value,
     }));
+    // Clear errors when the user starts typing
+    setErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
   };
+
   const handleAddTask = async () => {
     setIsAddingTask(true);
+
     try {
+      // Validate the input data using Zod
+      const validationResult = taskSchema.safeParse(newTask);
+
+      if (!validationResult.success) {
+        // If validation fails, set the errors
+        const fieldErrors = {};
+        validationResult.error.issues.forEach((issue) => {
+          fieldErrors[issue.path[0]] = issue.message;
+        });
+        setErrors(fieldErrors);
+        return;
+      }
+
+      // If validation passes, proceed with the API request
       const response = await axiosInstance({
         method: summaryApi.addTask.method,
         url: summaryApi.addTask.path,
@@ -35,7 +70,7 @@ const CreateTask = ({ closeModal,fetchAnalytics }) => {
       if (response.data.success) {
         toast.success(response.data.message);
         dispatch(addTask(response.data.newTask));
-        fetchAnalytics()
+        fetchAnalytics();
         closeModal();
         setNewTask({
           title: "",
@@ -47,11 +82,14 @@ const CreateTask = ({ closeModal,fetchAnalytics }) => {
     } catch (error) {
       if (error.response) {
         toast.error(error.response.data.message);
+      } else {
+        toast.error("Error adding task");
       }
     } finally {
       setIsAddingTask(false);
     }
   };
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4">
       <div className="bg-gray-800/90 backdrop-blur-md p-4 sm:p-6 rounded-xl shadow-lg w-full max-w-md">
@@ -72,6 +110,9 @@ const CreateTask = ({ closeModal,fetchAnalytics }) => {
             onChange={handleInputChange}
             className="w-full p-2 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 transition-all duration-300 hover:border-gray-500"
           />
+          {errors.title && (
+            <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+          )}
         </div>
 
         {/* Description Input */}
@@ -87,6 +128,9 @@ const CreateTask = ({ closeModal,fetchAnalytics }) => {
             rows="3"
             className="w-full p-2 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 transition-all duration-300 hover:border-gray-500 resize-none"
           />
+          {errors.description && (
+            <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+          )}
         </div>
 
         {/* Due Date Input */}
@@ -101,6 +145,9 @@ const CreateTask = ({ closeModal,fetchAnalytics }) => {
             onChange={handleInputChange}
             className="w-full p-2 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 transition-all duration-300 hover:border-gray-500"
           />
+          {errors.dueDate && (
+            <p className="text-red-500 text-sm mt-1">{errors.dueDate}</p>
+          )}
         </div>
 
         {/* Priority Dropdown */}
@@ -115,6 +162,7 @@ const CreateTask = ({ closeModal,fetchAnalytics }) => {
               onChange={handleInputChange}
               className="w-full p-2 pr-8 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 appearance-none transition-all duration-300 hover:border-gray-500"
             >
+              <option value="" disabled>Select Priority</option>
               <option value="High" className="bg-gray-800 text-red-400">
                 High
               </option>
@@ -140,6 +188,9 @@ const CreateTask = ({ closeModal,fetchAnalytics }) => {
               </svg>
             </div>
           </div>
+          {errors.priority && (
+            <p className="text-red-500 text-sm mt-1">{errors.priority}</p>
+          )}
         </div>
 
         {/* Action Buttons */}

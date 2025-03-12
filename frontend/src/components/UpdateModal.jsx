@@ -1,10 +1,24 @@
-import React, { useState } from 'react'
-import { axiosInstance } from '../utils/axiosInstance';
-import { summaryApi } from '../utils/summaryAPI';
-import toast from 'react-hot-toast';
-import { useDispatch } from 'react-redux';
-import { updateTask } from '../store/taskSlice';
-const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
+import React, { useState } from "react";
+import { axiosInstance } from "../utils/axiosInstance";
+import { summaryApi } from "../utils/summaryAPI";
+import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { updateTask } from "../store/taskSlice";
+import { z } from "zod";
+
+// Define the schema for task validation
+const taskSchema = z.object({
+  title: z.string().min(1, "Title is required").max(100, "Title is too long"),
+  description: z.string().min(10,"Decription must be 10 charactor long").max(500, "Description is too long"),
+  dueDate: z.string().refine((value) => {
+    const date = new Date(value);
+    return !isNaN(date.getTime()); // Ensure the date is valid
+  }, "Invalid date format"),
+  priority: z.enum(["High", "Medium", "Low"]),
+  status: z.enum(["In Progress", "Completed", "Pending"]),
+});
+
+const UpdateModal = ({ closeUpdateModal, selectedTask: task, fetchAnalytics }) => {
   const dispatch = useDispatch();
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
   const [selectedTask, setSelectedTask] = useState({
@@ -13,43 +27,61 @@ const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
     description: task.description,
     dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
     priority: task.priority,
-    status: task.status
+    status: task.status,
   });
 
-  // console.log(selectedTask)
+  const [errors, setErrors] = useState({});
+
   const handleUpdateInputChange = (e) => {
     const { name, value } = e.target;
     setSelectedTask({ ...selectedTask, [name]: value });
+    // Clear errors when the user starts typing
+    setErrors((prevErrors) => ({ ...prevErrors, [name]: "" }));
   };
 
-  const handleUpdateTask = async()=>{
-    setIsUpdatingTask(true)
-    try{
+  const handleUpdateTask = async () => {
+    setIsUpdatingTask(true);
+
+    try {
+      // Validate the input data using Zod
+      const validationResult = taskSchema.safeParse(selectedTask);
+
+      if (!validationResult.success) {
+        // If validation fails, set the errors
+        const fieldErrors = {};
+        validationResult.error.issues.forEach((issue) => {
+          fieldErrors[issue.path[0]] = issue.message;
+        });
+        setErrors(fieldErrors);
+        return;
+      }
+
+      // If validation passes, proceed with the API request
       const response = await axiosInstance({
         method: summaryApi.updateTask.method,
         url: `${summaryApi.updateTask.path}/${selectedTask._id}`,
-        data: selectedTask
-      })
-      console.log(response.data.success)
+        data: selectedTask,
+      });
 
-      if(response.data.success){
-        toast.success(response.data.message)
-        dispatch(updateTask(response.data.data))
-        fetchAnalytics()
-        closeUpdateModal()
-      }else{
-        toast.error(response.data.message)
+      if (response.data.success) {
+        toast.success(response.data.message);
+        dispatch(updateTask(response.data.data));
+        fetchAnalytics();
+        closeUpdateModal();
+      } else {
+        toast.error(response.data.message);
       }
-    }catch(error){
-      if(error.response){
-        toast.error(error.response.data.message)
-      }else{
-        toast.error("Error updating task")
+    } catch (error) {
+      if (error.response) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Error updating task");
       }
-    }finally{
-      setIsUpdatingTask(false)
+    } finally {
+      setIsUpdatingTask(false);
     }
-  }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4">
       <div className="bg-gray-800/90 backdrop-blur-md p-4 sm:p-6 rounded-xl shadow-lg w-full max-w-md">
@@ -70,6 +102,9 @@ const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
             onChange={handleUpdateInputChange}
             className="w-full p-2 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 transition-all duration-300 hover:border-gray-500"
           />
+          {errors.title && (
+            <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+          )}
         </div>
 
         {/* Description Input */}
@@ -85,6 +120,9 @@ const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
             rows="3"
             className="w-full p-2 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 transition-all duration-300 hover:border-gray-500 resize-none"
           />
+          {errors.description && (
+            <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+          )}
         </div>
 
         {/* Due Date Input */}
@@ -99,6 +137,9 @@ const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
             onChange={handleUpdateInputChange}
             className="w-full p-2 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 transition-all duration-300 hover:border-gray-500"
           />
+          {errors.dueDate && (
+            <p className="text-red-500 text-sm mt-1">{errors.dueDate}</p>
+          )}
         </div>
 
         {/* Priority Dropdown */}
@@ -113,6 +154,7 @@ const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
               onChange={handleUpdateInputChange}
               className="w-full p-2 pr-8 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 appearance-none transition-all duration-300 hover:border-gray-500"
             >
+              <option value="" disabled>Select Priority</option>
               <option value="High" className="bg-gray-800 text-red-400">
                 High
               </option>
@@ -138,23 +180,35 @@ const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
               </svg>
             </div>
           </div>
+          {errors.priority && (
+            <p className="text-red-500 text-sm mt-1">{errors.priority}</p>
+          )}
         </div>
 
-
+        {/* Status Dropdown */}
         <div className="mb-6">
-                    <div className="relative">
+          <div className="relative">
             <select
               name="status"
               value={selectedTask.status}
               onChange={handleUpdateInputChange}
               className="w-full p-2 pr-8 rounded-md bg-gray-700/50 border-2 border-gray-600/50 text-white focus:outline-none focus:border-indigo-500 appearance-none transition-all duration-300 hover:border-gray-500"
             >
-                <option value="In Progress" className="bg-gray-800">In Progress</option>
-                <option value="Completed" className="bg-gray-800">Completed</option>
-                <option value="Pending" className="bg-gray-800">Pending</option>
+              <option value="" disabled>Select Status</option>
+              <option value="In Progress" className="bg-gray-800">
+                In Progress
+              </option>
+              <option value="Completed" className="bg-gray-800">
+                Completed
+              </option>
+              <option value="Pending" className="bg-gray-800">
+                Pending
+              </option>
             </select>
-          
           </div>
+          {errors.status && (
+            <p className="text-red-500 text-sm mt-1">{errors.status}</p>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -180,7 +234,7 @@ const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default UpdateModal
+export default UpdateModal;

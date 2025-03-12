@@ -174,4 +174,119 @@ const getAnalytics = async ({ userId }) => {
     throw new Error(error);
   }
 };
-export default { createTask, getTasks, getAnalytics };
+
+const getTaskById = async (taskId) => {
+  try {
+    if (!taskId) {
+      return {
+        status: 400,
+        success: false,
+        message: "Task ID is required",
+      };
+    }
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return {
+        status: 404,
+        success: false,
+        message: "Task not found",
+      };
+    }
+    return {
+      status: 200,
+      success: true,
+      task,
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+const updateTask = async ({
+  taskId,
+  title,
+  description,
+  dueDate,
+  priority,
+  status,
+}) => {
+  try {
+    if (!taskId) {
+      return {
+        status: 400,
+        success: false,
+        message: "Task ID is required",
+      };
+    }
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return {
+        status: 404,
+        success: false,
+        message: "Task not found",
+      };
+    }
+    const updateData = {
+      ...(title && { title }),
+      ...(description && { description }),
+      ...(dueDate && { dueDate }),
+      ...(priority && { priority }),
+      ...(status && { status }),
+    };
+
+    if (status === "Completed") {
+      updateData.completed = true;
+      updateData.completedAt = new Date();
+    } else {
+      updateData.completed = false;
+      updateData.completedAt = null;
+    }
+    const updatedTask = await Task.findByIdAndUpdate(taskId, updateData, {
+      new: true,
+    });
+    return {
+      status: 200,
+      success: true,
+      task: updatedTask,
+      message: "Task updated successfully",
+    };
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+
+const deleteTask = async ({taskId}) => {
+  try {
+    if (!taskId) {
+      return {
+        status: 400,
+        success: false,
+        message: "Task ID is required",
+      };
+    }
+    const task = await Task.findByIdAndDelete(taskId);
+    if (!task) {
+      return {
+        status: 404,
+        success: false,
+        message: "Task not found",
+      };
+    }
+    return {
+      status: 200,
+      success: true,
+      message: "Task deleted successfully",
+    }
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+export default {
+  createTask,
+  getTasks,
+  getAnalytics,
+  getTaskById,
+  updateTask,
+  deleteTask,
+};

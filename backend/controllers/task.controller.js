@@ -11,16 +11,6 @@ const createTask = async (req, res) => {
         .status(400)
         .json({ success: false, message: "All fields are required" });
     }
-    // const newTask = new Task({
-    //   title: title,
-    //   description: description,
-    //   dueDate: dueDate,
-    //   priority: priority,
-    //   createdBy: req.user.userId,
-    // });
-
-    // await newTask.save();
-
     const response = await taskService.createTask({
       title,
       description,
@@ -109,18 +99,11 @@ const getTasks = async (req, res) => {
 const getTaskById = async (req, res) => {
   try {
     const taskId = req.params.id;
-    if (!taskId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Task ID is required" });
+    const response = await taskService.getTaskById({ taskId });
+    if (!response.success) {
+      return res.status(response.status).json({ success: response.success, message: response.message });
     }
-    const task = await Task.findById(taskId);
-    if (!task) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Task not found" });
-    }
-    return res.status(200).json({ success: true, data: task });
+    return res.status(response.status).json({ success: response.success, task: response.task });
   } catch (error) {
     return res
       .status(500)
@@ -131,42 +114,22 @@ const getTaskById = async (req, res) => {
 const updateSpecificTask = async (req, res) => {
   try {
     const taskId = req.params.id;
-    if (!taskId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Task ID is required" });
-    }
-    const task = await Task.findById(taskId);
-    if (!task) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Task not found" });
-    }
     const { title, description, dueDate, priority, status } = req.body;
-    const updateData = {
-      ...(title && { title }),
-      ...(description && { description }),
-      ...(dueDate && { dueDate }),
-      ...(priority && { priority }),
-      ...(status && { status }),
-    };
+    
 
-    if (status === "Completed") {
-      updateData.completed = true;
-      updateData.completedAt = new Date();
-    } else {
-      updateData.completed = false;
-      updateData.completedAt = null;
+    const response = await taskService.updateTask({
+      taskId,
+      title,
+      description,
+      dueDate,
+      priority,
+      status
+    })
+    console.log("response", response);
+    if (!response.success) {
+      return res.status(response.status).json({ success: response.success, message: response.message });
     }
-
-    const updatedTask = await Task.findByIdAndUpdate(taskId, updateData, {
-      new: true,
-    });
-    return res.status(200).json({
-      success: true,
-      message: "Task updated successfully",
-      data: updatedTask,
-    });
+    return res.status(response.status).json({ success: response.success, message: response.message, data: response.task });
   } catch (error) {
     console.log(error);
     return res
@@ -178,26 +141,8 @@ const updateSpecificTask = async (req, res) => {
 const delateSpecificTask = async (req, res) => {
   try {
     const taskId = req.params.id;
-    const user = await userModel.findById(req.user.userId);
-    if (!taskId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Task ID is required" });
-    }
-    const task = await Task.findById(taskId);
-    if (!task) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Task not found" });
-    }
-    await Task.findByIdAndDelete(taskId);
-
-    user.tasks = user.tasks.filter((task) => task.toString() !== taskId);
-
-    await user.save();
-    return res
-      .status(200)
-      .json({ success: true, message: "Task deleted successfully" });
+    const response = await taskService.deleteTask({ taskId });
+    return res.status(response.status).json({ success: response.success, message: response.message});
   } catch (error) {
     return res
       .status(500)

@@ -48,4 +48,19 @@ const loginUser = async ({ email, password }) => {
     throw new Error(error);
   }
 };
-export default { createUser, loginUser };
+
+const fetchUser = async ({ userId }) => {
+  try {
+    if (!userId) {
+      return { success: false, message: "User ID is required" };
+    };
+    const user = await user.findById(userId).select("-password");
+    if (!user) {
+      return { success: false, message: "User not found" };
+    }
+    return { success: true, user };
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+export default { createUser, loginUser, fetchUser };

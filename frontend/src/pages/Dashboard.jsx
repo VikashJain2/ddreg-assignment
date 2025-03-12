@@ -100,8 +100,7 @@ const Dashboard = () => {
       const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
       const matchesPriority = priorityFilter === 'All' || task.priority === priorityFilter;
-      const isPendingOrCompleted = task.status === 'Pending' || task.status === 'Completed';
-      return matchesSearch && matchesStatus && matchesPriority && isPendingOrCompleted;
+      return matchesSearch && matchesStatus && matchesPriority;
     })
     .filter((task) => {
       if (showUpcoming) {
