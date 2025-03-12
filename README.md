@@ -441,3 +441,6 @@ curl -X GET http://localhost:3000/analytics \
 This project provides a comprehensive task management solution with a robust backend and a user-friendly frontend. It includes features for user authentication, task management, and data visualization, making it a powerful tool for managing tasks efficiently.
 
 Feel free to contribute to this project by submitting issues or pull requests on the GitHub repository.
+## Author
+
+This project was developed by Vikash Jain. You can reach out to me at [vikash.jain2205@gmail.com](mailto:vikash.jain@example.com) for any queries or suggestions. Feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/vikash-jain-922b00257/) or check out my other projects on [GitHub](https://github.com/Vikashjain2).
