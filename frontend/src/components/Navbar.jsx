@@ -21,6 +21,7 @@ const Navbar = () => {
 
         if(response.data.success){
             toast.success(response.data.message)
+            localStorage.removeItem("token")
             navigate("/")
         }
     }catch(error){

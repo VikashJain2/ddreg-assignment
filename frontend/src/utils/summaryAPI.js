@@ -28,5 +28,9 @@ export const summaryApi = {
   updateTask:{
     path: "/tasks",
     method: "PUT"
+  },
+  analytics:{
+    path:"/analytics",
+    method:"GET"
   }
 };

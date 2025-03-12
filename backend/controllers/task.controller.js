@@ -1,5 +1,7 @@
+
 import Task from "../models/task.model.js";
 import taskService from "../services/task.service.js";
+import userModel from "../models/user.model.js";
 const createTask = async (req, res) => {
   try {
     const { title, description, dueDate, priority } = req.body;
@@ -46,82 +48,13 @@ const createTask = async (req, res) => {
 
 const getDashboardAnalytics = async (req, res) => {
   try {
-    // Aggregation Pipeline
-    const analytics = await Task.aggregate([
-      {
-        $group: {
-          _id: "$assignedTo",
-          totalTasks: { $sum: 1 },
-          completedTasks: {
-            $sum: {
-              $cond: [{ $eq: ["$completed", true] }, 1, 0],
-            },
-          },
-          pendingTasks: {
-            $sum: {
-              $cond: [{ $eq: ["$completed", false] }, 1, 0],
-            },
-          },
-        },
-      },
-
-      {
-        $lookup: {
-          from: "users",
-          localField: "_id",
-          foreignField: "_id",
-          as: "userDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$userDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-
-      {
-        $facet: {
-          tasksByPriority: [
-            {
-              $group: {
-                _id: "$priority",
-                totalTasks: { $sum: 1 },
-              },
-            },
-          ],
-          taskStatus: [
-            {
-              $group: {
-                _id: "$completed",
-                totalTasks: { $sum: 1 },
-              },
-            },
-          ],
-          tasksByDueDate: [
-            {
-              $group: {
-                _id: {
-                  $cond: [
-                    { $gte: ["$dueDate", new Date()] },
-                    "Upcoming",
-                    "Overdue",
-                  ],
-                },
-                totalTasks: { $sum: 1 },
-              },
-            },
-          ],
-        },
-      },
-    ]);
+    const response = await taskService.getAnalytics({userId: req.user.userId})
 
     const result = {
-      userTasks: analytics,
-      tasksByPriority: analytics[0]?.tasksByPriority || [],
-      taskStatus: analytics[0]?.taskStatus || [],
-      tasksByDueDate: analytics[0]?.tasksByDueDate || [],
+      priorityData: response.analyticsData[0].priorityData[0] || {},
+      dayWiseCompletionData: response.analyticsData[0]?.dayWiseCompletionData || [],
     };
+    console.log(result);
 
     return res.status(200).json({
       success: true,
@@ -245,7 +178,7 @@ const updateSpecificTask = async (req, res) => {
 const delateSpecificTask = async (req, res) => {
   try {
     const taskId = req.params.id;
-
+    const user = await userModel.findById(req.user.userId);
     if (!taskId) {
       return res
         .status(400)
@@ -258,6 +191,10 @@ const delateSpecificTask = async (req, res) => {
         .json({ success: false, message: "Task not found" });
     }
     await Task.findByIdAndDelete(taskId);
+
+    user.tasks = user.tasks.filter((task) => task.toString() !== taskId);
+
+    await user.save();
     return res
       .status(200)
       .json({ success: true, message: "Task deleted successfully" });

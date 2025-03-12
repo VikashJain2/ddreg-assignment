@@ -4,7 +4,7 @@ import { summaryApi } from '../utils/summaryAPI';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 import { updateTask } from '../store/taskSlice';
-const UpdateModal = ({closeUpdateModal, selectedTask:task}) => {
+const UpdateModal = ({closeUpdateModal, selectedTask:task,fetchAnalytics}) => {
   const dispatch = useDispatch();
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
   const [selectedTask, setSelectedTask] = useState({
@@ -35,6 +35,7 @@ const UpdateModal = ({closeUpdateModal, selectedTask:task}) => {
       if(response.data.success){
         toast.success(response.data.message)
         dispatch(updateTask(response.data.data))
+        fetchAnalytics()
         closeUpdateModal()
       }else{
         toast.error(response.data.message)

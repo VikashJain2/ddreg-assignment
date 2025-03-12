@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { z } from "zod";
 import toast from "react-hot-toast";
@@ -54,6 +54,7 @@ const UserForm = () => {
 
       if (response.data.success) {
         toast.success(response.data.message);
+        localStorage.setItem("token", response.data.token);
         setFormData({ email: "", password: "", username: "" });
         navigate("/dashboard")
       } else {
@@ -69,6 +70,8 @@ const UserForm = () => {
       } else {
         if (err.response) {
           toast.error(err.response.data.message);
+        }else{
+          toast.error(err.msg)
         }
       }
     } finally {
@@ -88,6 +91,12 @@ const UserForm = () => {
       setErrors((prevErrors) => ({ ...prevErrors, [name]: null }));
     }
   };
+
+  useEffect(()=>{
+    if(localStorage.getItem("token")){
+      navigate("/dashboard")
+    }
+  },[])
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-900 to-purple-900 text-white">

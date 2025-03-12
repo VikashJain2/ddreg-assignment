@@ -7,8 +7,10 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.routes.js";
 import taskRouter from "./routes/task.routes.js";
+import helmet from 'helmet'
 dotenv.config();
 app.use(express.json());
+app.use(helmet())
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser())
 app.use(

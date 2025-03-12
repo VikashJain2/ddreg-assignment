@@ -4,7 +4,7 @@ import { axiosInstance } from "../utils/axiosInstance";
 import { summaryApi } from "../utils/summaryAPI";
 import { useDispatch } from "react-redux";
 import { addTask } from "../store/taskSlice";
-const CreateTask = ({ closeModal }) => {
+const CreateTask = ({ closeModal,fetchAnalytics }) => {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const dispatch = useDispatch();
   const [newTask, setNewTask] = useState({
@@ -35,6 +35,7 @@ const CreateTask = ({ closeModal }) => {
       if (response.data.success) {
         toast.success(response.data.message);
         dispatch(addTask(response.data.newTask));
+        fetchAnalytics()
         closeModal();
         setNewTask({
           title: "",

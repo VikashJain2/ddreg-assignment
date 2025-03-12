@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { removeTask } from "../store/taskSlice";
 
-const DeleteModal = ({ closeDeleteModal, taskId }) => {
+const DeleteModal = ({ closeDeleteModal, taskId,fetchAnalytics }) => {
   const dispatch = useDispatch();
   const handleDeleteTask = async () => {
     try {
@@ -17,6 +17,7 @@ const DeleteModal = ({ closeDeleteModal, taskId }) => {
       if (response.data.success) {
         toast.success(response.data.message);
         dispatch(removeTask(taskId));
+        fetchAnalytics()
         closeDeleteModal();
       } else {
         toast.error(response.data.message);

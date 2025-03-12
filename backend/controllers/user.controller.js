@@ -38,7 +38,8 @@ const registerUser = async (req, res) => {
       .cookie("token", token, { httpOnly: true, secure: true })
       .status(201)
       .json({
-        newUser: response.newUser,
+        // newUser: response.newUser,
+        token,
         success: true,
         message: response.message,
       });
@@ -81,7 +82,8 @@ const loginUser = async (req, res) => {
       .json({
         success: true,
         message: "User logged in successfully",
-        user: response.user,
+        // user: response.user,
+        token
       });
   } catch (error) {
     console.error("Error during login:", error);
